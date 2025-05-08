@@ -1,0 +1,7 @@
+pandas
+jieba
+scikit-learn
+lightgbm
+datasets
+transformers==4.51.1
+torch
