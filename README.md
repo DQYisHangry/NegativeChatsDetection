@@ -123,11 +123,13 @@ HuggingFace Trainer
 
   ·  Metric for model selection: eval_f1
 
-Training Environment: 
+## Training Environment: 
 
-Platform: Google Colab Pro
+### Platform: 
+Google Colab Pro
 
-GPU: T4 (16GB)
+### GPU: 
+T4 (16GB)
 
 # Final Model: BERT + LightGBM Ensemble
 
