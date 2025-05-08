@@ -1,19 +1,19 @@
-Gamers' Negative Chat Recognition
+# Gamers' Negative Chat Recognition
 
-# Overview
+## Overview
 
 This project addresses the growing concern of negative player behavior in online games, such as toxic language, threats, intentional feeding, or AFK (away from keyboard) behavior. Our goal is to detect negative chat messages in a Chinese-language dataset using NLP and supervised machine learning.
 
 ---
 
-# Problem Statement
+## Problem Statement
 
 Online multiplayer games often suffer from disruptive player behavior, such as verbal abuse, intentional feeding, AFK (away from keyboard), and rage-quitting. These behaviors degrade the gaming experience. Our objective is to:
 Classify each chat message as either Normal (label=0) or Negative (label=1).
 
 ---
 
-# Dataset
+## Dataset
 
 ### Source: Provided CSV file from competition organizers
 
@@ -31,7 +31,7 @@ Negative (label = 1): ~38%
 
 ---
 
-# Data Acquisition
+## Data Acquisition
 
 ### To load the dataset in your notebook:
 <pre>import pandas as pd 
@@ -40,7 +40,7 @@ df = pd.read_csv("/content/data/train.csv")  </pre>
 
 ---
 
-# Preprocessing Steps
+## Preprocessing Steps
 
 ### 1. Deduplication: Removed duplicated text entries
 
@@ -70,7 +70,7 @@ df = pd.read_csv("/content/data/train.csv")  </pre>
  · Trained an MLPClassifier using sentence-level averaged embeddings
  
 
-# Baseline Modeling
+## Baseline Modeling
 
 ### Models:
 
@@ -94,7 +94,7 @@ df = pd.read_csv("/content/data/train.csv")  </pre>
 Local Jupyter Notebook
 
 
-# BERT Fine-Tuning (Main Model)
+## BERT Fine-Tuning (Main Model)
 
 ### Model: 
 bert-base-chinese
@@ -135,7 +135,7 @@ T4 (16GB)
 
 I used BERT's prediction logits as features, combined with keyword_flag, and trained a LightGBM classifier to improve recall and F1.
 
-# Evaluation Summary
+## Evaluation Summary
 
 | Model                      | Precision | Recall | F1 Score |
 |---------------------------|-----------|--------|----------|
