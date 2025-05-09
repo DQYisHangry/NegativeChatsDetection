@@ -17,6 +17,8 @@ Classify each chat message as either Normal (label=0) or Negative (label=1).
 
 ### Source: Provided CSV file from competition organizers
 
+CHEN Han. gamer's negative chat recognition(消极游戏聊天内容检测). https://kaggle.com/competitions/gamers-negative-chat-recognition, 2022. Kaggle.
+
 ### Fields: 
 qid, text, label
 
@@ -44,44 +46,54 @@ df = pd.read_csv("/content/data/train.csv")  </pre>
 
 ### 1. Deduplication: Removed duplicated text entries
 
+  ·  I first removed duplicate messages to avoid model overfitting and ensured clean formatting. 
 
 ### 2. Feature modification:
 
-  ·  keyword_flag: Whether the text contains known negative words (e.g., 挂机, 送人头)
+  ·  Key words: To enhance the model's understanding of gaming-specific toxity, I curated a list of toxic keywords (e.g., 挂机, 送人头, etc.)
  
-  ·  text_len: Length of message
+  ·  text_len: I set the text max length to 25, as each text in this data were quite short (about 18 characters per text on average)
  
-  ·  excl_count, ques_count: Count of ! and ? as potential aggression markers
+  ·  excl_count, ques_count: I also added simple text-based featues like punctuation counts. Count of ! and ? as potential aggression markers
 
 
 ### 3. Cleaning & Tokenization:
 
-  ·  Regex to remove non-Chinese characters
+  ·  I cleaned the text by removing non-Chinese characters using regex. 
  
-  ·  Tokenized using jieba
+  ·  For the baseline model tokenization, I used Jieba to segment Chinese text into words. 
+  
+  ·  For the final model, I used HuggingFace's BERT tokenizer. 
 
 
-### 4. Initial Word2Vec Attempt (Baseline):
-
-  ·  Used jieba for preprocessing and tokenization
- 
-  ·  Applied Tencent's pretrained Chinese Word2Vec embeddings
- 
- · Trained an MLPClassifier using sentence-level averaged embeddings
- 
 
 ## Baseline Modeling
 
+
 ### Models:
 
+I experimented with a few simple models to build intuition:
+
   ·  Logistic Regression + CountVectorizer
-
-  ·  MLPClassifier + Word2Vec sentence embedding
-
-  ·  LightGBM + BERT logits + keyword features
   
+  ·  TF-IDF: Logistic Regression
+  
+  ·  MLPClassifier + Word2Vec sentence embedding: I used Tencen's pretrained word embeddings to generate sentence-level featues, but performance was poor (F1~0.53 for negative texts), so I abandoned this path. 
 
-### Evaluation:
+  ·  My guess on this poor performance are: 
+  
+       a. Mismacthed Domain: 
+       The Tencent embeddings were trained on genral Chinese corpora like news, blogs and encylopedias, which differ significantly from informal, slang-heavy game chat. 
+       As a result, many in-game phrases and toxic expressions were either poorly represented or missing from the embedding space. 
+       
+       b. Short&Spares Texts: 
+       Game chat messages are extremely short (often under 15 characters), limiting the contexutal richness that Word2Vec relies on. 
+       With only a few words per message, sentence-level averaging of embeddings tends to dilute meaningful distinctions between classes. 
+
+While these approches were lightweight and easy to implement, they quickly hit a performance ceilinf - particularly in capturing nuanced or implicit negativity in short, slang-heavy game chat messages. 
+
+
+### Evaluation. The results of the baseline model:
 
   ·  Metric: F1-score (focus on class 1)
 
@@ -90,14 +102,18 @@ df = pd.read_csv("/content/data/train.csv")  </pre>
 
 
 
+
 ### Training Environment: 
 Local Jupyter Notebook
 
 
 ## BERT Fine-Tuning (Main Model)
+The base line models les me to fine-tune a pre-trained Chinese BERT model. Unlike static embeddings, BERT provides context-aware representations that are much better suited to short, informal language. Fine-tuning gave a significant boost in F1 and allowed the model to better distinguish subtle toxicity pattern. 
+
 
 ### Model: 
-bert-base-chinese
+The bert-base-Chinese model is a version of BERT pretrained by Google on large-scale Chinese text (including Chinese Wikipedia) and published via Hugging Face's model hub: 
+https://huggingface.co/bert-base-chinese
 
 
 ### Preprocessing: 
@@ -110,6 +126,8 @@ HuggingFace Trainer
 
 ### Hyperparameters:
 
+I optimized the max sequence length (set to 25), batch size (32/64), learning rate, and epoch count(5). 
+I also used stratified train/val splits (by label and keyword) to ensure consistent class distribution. 
 
   ·  Max sequence length: 25
 
@@ -131,11 +149,18 @@ Google Colab Pro
 ### GPU: 
 T4 (16GB)
 
+## Results:
+This model achieved and F1 score of ~0.62 on the validation set. Still not perfect but it's a much better improvement from the baseline model. 
+
 # Final Model: BERT + LightGBM Ensemble
 
-I used BERT's prediction logits as features, combined with keyword_flag, and trained a LightGBM classifier to improve recall and F1.
+To further boost performance, I implemented a simple ensemble:
+  ·  I extracted logits (softmax probabilities) from the fine-tuned BERT model on the validation set. 
+  ·  I combined them with the keyword_flag as features to train a LightGB< classifier. 
+  ·  This ensenble pushed the F1-score to ~0,65, with improved precision and recall. 
 
-## Evaluation Summary
+
+# Evaluation Summary 
 
 | Model                      | Precision | Recall | F1 Score |
 |---------------------------|-----------|--------|----------|
@@ -144,3 +169,5 @@ I used BERT's prediction logits as features, combined with keyword_flag, and tra
 | BERT + LightGBM (Final)   | 0.75      | 0.57   | 0.65     |
 
 
+## Final Thoughts
+### This project has been deeply rewarding exploration into the intersection of NLP and online behavior moderation. From experimenting with tradtional vectorization methods to fine-tuning state-of-the-art transformer models, I experienced firsthand the trade-offs between speed, interpretability, and performance. While my early attempts with Word2vec and logistic regression laid a solid foundation, it was the shift to BERT fine-tuning - and eventully to BERT + LightGBM meta-classifier - that brought significant gains in F1-score. Along the way, I strenthened my ability to troubleshoot, optimize, and iterate independently. 
